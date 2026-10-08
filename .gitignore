@@ -1,0 +1,8 @@
+# 各年級的遊戲是獨立的 repo，不放進主畫面這個 repo
+preschool/
+grade1/
+grade2/
+grade3/
+grade4/
+grade5/
+grade6/

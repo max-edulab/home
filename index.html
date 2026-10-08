@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Max EduLab 學習遊戲</title>
+<meta name="description" content="Max EduLab 的學習遊戲入口：依年級或科目找遊戲，點一下就開始玩。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sky:#5c94fc; --ink:#1b1b2f; --paper:#fffbe8; --brick:#c84c0c; --gold:#fcbc3c; --leaf:#3c9c28; --muted:#6a6a80; --line:#d8d2b8;
+  --f-zy:"Noto Sans TC","Microsoft JhengHei","PingFang TC",sans-serif;
+  --f-px:"Press Start 2P",ui-monospace,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--sky);color:var(--ink);font-family:var(--f-zy);min-height:100vh}
+a{color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:16px;display:grid;grid-template-columns:260px minmax(0,1fr);gap:18px;align-items:start}
+
+/* ---------- 左邊：搜尋、排序、分組 ---------- */
+.side{position:sticky;top:16px;display:flex;flex-direction:column;gap:14px;background:var(--paper);border:4px solid var(--ink);box-shadow:6px 6px 0 rgba(0,0,0,.25);padding:16px}
+.logo{margin:0;font-size:22px;font-weight:900;line-height:1.3}
+.logo .px{display:block;font-family:var(--f-px);font-size:13px;color:var(--brick);letter-spacing:.04em;margin-bottom:6px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:14px;font-weight:900;color:var(--muted)}
+.search{width:100%;font:inherit;font-size:16px;font-weight:700;padding:9px 10px;border:3px solid var(--ink);background:#fff;color:var(--ink);border-radius:0}
+.search:focus,select:focus{outline:3px solid var(--gold);outline-offset:1px}
+select{width:100%;font:inherit;font-size:16px;font-weight:700;padding:8px 10px;border:3px solid var(--ink);background:#fff;color:var(--ink);border-radius:0;cursor:pointer}
+.groups{display:flex;flex-direction:column;gap:4px;margin:0;padding:0;list-style:none}
+.groups a{display:flex;justify-content:space-between;align-items:center;gap:8px;text-decoration:none;font-weight:700;padding:6px 8px;border:2px solid transparent}
+.groups a:hover{border-color:var(--ink);background:#fff3b0}
+.groups .n{font-family:var(--f-px);font-size:10px;background:var(--ink);color:#fff;padding:3px 5px}
+.groups .empty{opacity:.45}
+.note{font-size:12px;color:var(--muted);line-height:1.6;margin:0}
+
+/* ---------- 右邊：分組的遊戲卡 ---------- */
+.main{display:flex;flex-direction:column;gap:22px;min-width:0}
+.group h2{margin:0 0 10px;display:inline-flex;align-items:center;gap:8px;font-size:20px;font-weight:900;color:#fff;background:var(--ink);padding:4px 12px;scroll-margin-top:16px}
+.group h2 .n{font-family:var(--f-px);font-size:10px;color:var(--gold)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.card{display:flex;flex-direction:column;gap:10px;background:var(--paper);border:4px solid var(--ink);box-shadow:0 5px 0 var(--ink);padding:14px;text-decoration:none;cursor:pointer;transition:transform .08s}
+.card:hover{transform:translateY(-3px);box-shadow:0 8px 0 var(--ink);background:#fff8d4}
+.card:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+.card:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
+.card .head{display:flex;align-items:center;gap:10px}
+.card .ico{flex:none;width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:28px;background:#cfe6ff;border:3px solid var(--ink)}
+.card h3{margin:0;font-size:20px;font-weight:900;line-height:1.25}
+.card p{margin:0;font-size:14px;line-height:1.6;color:#3a3a50}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-size:12px;font-weight:700;padding:2px 7px;border:2px solid var(--ink);background:#fff;white-space:nowrap}
+.chip.stage{background:#ffe08a}
+.chip.subject{background:#bfe8c0}
+.chip mark{background:#ffd23c;color:inherit;padding:0}
+.card .go{margin-top:auto;align-self:flex-start;font-weight:900;font-size:14px;background:var(--leaf);color:#fff;border:3px solid var(--ink);padding:4px 12px}
+.card .go::after{content:" ▶"}
+.none{background:var(--paper);border:4px solid var(--ink);padding:24px;font-weight:700;text-align:center}
+mark{background:#ffd23c;color:inherit}
+
+@media (max-width:760px){
+  .wrap{grid-template-columns:minmax(0,1fr)}
+  .side{position:static}
+  .groups{flex-direction:row;flex-wrap:wrap}
+  .groups li:has(.empty){display:none}
+  .cards{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside class="side">
+    <h1 class="logo"><span class="px">MAX EDULAB</span>學習遊戲</h1>
+    <div class="field">
+      <label for="q">搜尋</label>
+      <input id="q" class="search" type="search" placeholder="遊戲名稱、年級、科目、單元…" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="sort">排序方式</label>
+      <select id="sort">
+        <option value="stage">依年級</option>
+        <option value="subject">依科目</option>
+      </select>
+    </div>
+    <ul class="groups" id="groups"></ul>
+    <p class="note">標籤寫在每個遊戲 index.html 的 &lt;meta name="edulab:…"&gt; 裡，這裡會自動讀取。</p>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+<script>
+// 遊戲清單：url 是 GitHub Pages 上的網址；labels 是讀不到遊戲裡的 meta 時的備用標籤
+// 新增遊戲：在這裡加一筆，並在那個遊戲的 index.html <head> 加上 edulab:* 的 meta
+const GAMES = [
+  { url:'https://max-edulab.github.io/grade1-MandarinChinese-Bopomofo/', folder:'grade1/chinese/bopomofo',
+    labels:{ title:'ㄅㄆㄇ心愛小鎮', stage:'國小一年級', subject:'國語', icon:'🏡', tags:'注音,ㄅㄆㄇ,拼音,聲調', desc:'在小鎮裡幫大家解決問題，練習注音符號、拼音和聲調。' } },
+  { url:'https://max-edulab.github.io/grade1-Math123-Sec1/', folder:'grade1/math/math123-sec1',
+    labels:{ title:'123冒險島', stage:'國小一年級', subject:'數學', icon:'🔢', tags:'數數,湊十,比多少,平面圖形,時鐘,順序', desc:'走遍六座冒險島，練習數數、湊十、比較、形狀、時鐘和數的順序。' } }
+];
+// 年級和科目的順序（不在清單裡的排最後）
+const STAGES = ['啟蒙', '國小一年級', '國小二年級', '國小三年級', '國小四年級', '國小五年級', '國小六年級'];
+const SUBJECTS = ['國語', '數學', '社會', '自然', '英語', '作文'];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const games = GAMES.map(g => ({ ...g, ...g.labels, tagList:g.labels.tags.split(',').filter(Boolean) }));
+
+// 讀每個遊戲裡的 <meta name="edulab:*">（GitHub Pages 允許跨網域讀取）
+async function loadMeta(g){
+  try {
+    const res = await fetch(g.url, { cache:'no-cache' });
+    if (!res.ok) return;
+    const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+    const m = k => { const el = doc.querySelector(`meta[name="edulab:${k}"]`); return el ? el.content.trim() : ''; };
+    ['title', 'stage', 'subject', 'icon', 'desc'].forEach(k => { if (m(k)) g[k] = m(k); });
+    if (m('tags')) g.tagList = m('tags').split(/[,，、]/).map(t => t.trim()).filter(Boolean);
+  } catch (e) { /* 讀不到就用備用標籤 */ }
+}
+
+const rank = (list, v) => { const i = list.indexOf(v); return i < 0 ? list.length : i; };
+const hl = (text, q) => { const t = esc(text); if (!q) return t; const i = text.toLowerCase().indexOf(q.toLowerCase()); return i < 0 ? t : esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length)); };
+const matches = (g, q) => !q || [g.title, g.stage, g.subject, g.desc, ...g.tagList].some(t => t.toLowerCase().includes(q.toLowerCase()));
+
+function render(){
+  const q = $('q').value.trim(), by = $('sort').value;
+  const list = games.filter(g => matches(g, q));
+  const order = by === 'stage' ? STAGES : SUBJECTS, key = by === 'stage' ? 'stage' : 'subject', sub = by === 'stage' ? 'subject' : 'stage', subOrder = by === 'stage' ? SUBJECTS : STAGES;
+  const names = [...new Set([...order, ...games.map(g => g[key])])];
+  const groups = names.map(name => ({ name, items:list.filter(g => g[key] === name).sort((a, b) => rank(subOrder, a[sub]) - rank(subOrder, b[sub]) || a.title.localeCompare(b.title, 'zh-Hant')) }));
+  $('groups').innerHTML = groups.map((gr, i) => `<li><a href="#g${i}" class="${gr.items.length ? '' : 'empty'}">${esc(gr.name)}<span class="n">${gr.items.length}</span></a></li>`).join('');
+  const shown = groups.map((gr, i) => ({ ...gr, i })).filter(gr => gr.items.length);
+  $('main').innerHTML = shown.length ? shown.map(gr => `<section class="group"><h2 id="g${gr.i}">${esc(gr.name)}<span class="n">${gr.items.length}</span></h2>
+    <div class="cards">${gr.items.map(g => `<a class="card" href="${esc(g.url)}">
+      <div class="head"><span class="ico" aria-hidden="true">${esc(g.icon || '🎮')}</span><h3>${hl(g.title, q)}</h3></div>
+      <div class="chips"><span class="chip stage">${hl(g.stage, q)}</span><span class="chip subject">${hl(g.subject, q)}</span>${g.tagList.map(t => `<span class="chip">${hl(t, q)}</span>`).join('')}</div>
+      <p>${hl(g.desc, q)}</p>
+      <span class="go">開始玩</span></a>`).join('')}</div></section>`).join('')
+    : `<div class="none">找不到「${esc(q)}」的遊戲</div>`;
+  try { localStorage.setItem('edulab-portal-sort', by); } catch (e) {}
+}
+
+try { const s = localStorage.getItem('edulab-portal-sort'); if (s) $('sort').value = s; } catch (e) {}
+$('q').addEventListener('input', render);
+$('sort').addEventListener('change', render);
+render();
+Promise.all(games.map(loadMeta)).then(render);
+</script>
+</body>
+</html>
