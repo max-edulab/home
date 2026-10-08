@@ -19,10 +19,26 @@
 html,body{margin:0}
 body{background:var(--sky);color:var(--ink);font-family:var(--f-zy);min-height:100vh}
 a{color:inherit}
+.bar{position:sticky;top:0;z-index:20;background:var(--ink);color:#fff;border-bottom:4px solid #000;box-shadow:0 4px 0 rgba(0,0,0,.2)}
+.bar-in{max-width:1240px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.home{display:flex;align-items:baseline;gap:10px;text-decoration:none;color:#fff;min-width:0}
+.home .px{font-family:var(--f-px);font-size:11px;color:var(--gold);white-space:nowrap}
+.home .ttl{font-size:22px;font-weight:900;white-space:nowrap}
+.sortbox{position:relative;flex:none}
+.sortbtn{display:flex;align-items:center;gap:0;font:inherit;font-size:16px;font-weight:500;color:#2a2a3a;background:#fff;border:1.5px solid #8a8a9a;border-radius:10px;padding:9px 14px 9px 16px;cursor:pointer;min-width:220px}
+.sortbtn b{font-weight:500}
+.sortbtn .caret{width:0;height:0;margin-left:auto;padding-left:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid #4a4a5a;translate:6px 0}
+.sortbtn b{margin-right:18px}
+.sortbtn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.sortmenu{position:absolute;right:0;top:calc(100% + 6px);min-width:100%;margin:0;padding:8px 0;list-style:none;background:#fff;color:#2a2a3a;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.sortmenu li{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:10px 18px;font-size:16px;cursor:pointer}
+.sortmenu li:hover,.sortmenu li:focus{background:#f0f2f8;outline:none}
+.sortmenu li[aria-selected="true"]{font-weight:900}
+.sortmenu li[aria-selected="true"]::after{content:"";width:12px;height:6px;border-left:2.5px solid #2c64d8;border-bottom:2.5px solid #2c64d8;rotate:-45deg;translate:0 -3px}
 .wrap{max-width:1240px;margin:0 auto;padding:16px;display:grid;grid-template-columns:260px minmax(0,1fr);gap:18px;align-items:start}
 
 /* ---------- 左邊：搜尋、排序、分組 ---------- */
-.side{position:sticky;top:16px;display:flex;flex-direction:column;gap:14px;background:var(--paper);border:4px solid var(--ink);box-shadow:6px 6px 0 rgba(0,0,0,.25);padding:16px}
+.side{position:sticky;top:80px;display:flex;flex-direction:column;gap:14px;background:var(--paper);border:4px solid var(--ink);box-shadow:6px 6px 0 rgba(0,0,0,.25);padding:16px}
 .logo{margin:0;font-size:22px;font-weight:900;line-height:1.3}
 .logo .px{display:block;font-family:var(--f-px);font-size:13px;color:var(--brick);letter-spacing:.04em;margin-bottom:6px}
 .field{display:flex;flex-direction:column;gap:6px}
@@ -39,7 +55,7 @@ select{width:100%;font:inherit;font-size:16px;font-weight:700;padding:8px 10px;b
 
 /* ---------- 右邊：分組的遊戲卡 ---------- */
 .main{display:flex;flex-direction:column;gap:22px;min-width:0}
-.group h2{margin:0 0 10px;display:inline-flex;align-items:center;gap:8px;font-size:20px;font-weight:900;color:#fff;background:var(--ink);padding:4px 12px;scroll-margin-top:16px}
+.group h2{margin:0 0 10px;display:inline-flex;align-items:center;gap:8px;font-size:20px;font-weight:900;color:#fff;background:var(--ink);padding:4px 12px;scroll-margin-top:84px}
 .group h2 .n{font-family:var(--f-px);font-size:10px;color:var(--gold)}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
 .card{display:flex;flex-direction:column;gap:10px;background:var(--paper);border:4px solid var(--ink);box-shadow:0 5px 0 var(--ink);padding:14px;text-decoration:none;cursor:pointer;transition:transform .08s}
@@ -63,6 +79,9 @@ mark{background:#ffd23c;color:inherit}
 @media (max-width:760px){
   .wrap{grid-template-columns:minmax(0,1fr)}
   .side{position:static}
+  .home .px{display:none}
+  .home .ttl{font-size:18px}
+  .sortbtn{min-width:0;font-size:15px;padding:8px 12px}
   .groups{flex-direction:row;flex-wrap:wrap}
   .groups li:has(.empty){display:none}
   .cards{grid-template-columns:minmax(0,1fr)}
@@ -71,22 +90,27 @@ mark{background:#ffd23c;color:inherit}
 </style>
 </head>
 <body>
+<header class="bar">
+  <div class="bar-in">
+    <a class="home" href="./"><span class="px">MAX EDULAB</span><span class="ttl">Home 主畫面</span></a>
+    <div class="sortbox" id="sortbox">
+      <button class="sortbtn" id="sortBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="sortMenu">排序方式：<b id="sortLbl">依年級</b><span class="caret" aria-hidden="true"></span></button>
+      <ul class="sortmenu" id="sortMenu" role="listbox" aria-label="排序方式" hidden>
+        <li role="option" data-v="stage" tabindex="-1">依年級</li>
+        <li role="option" data-v="subject" tabindex="-1">依科目</li>
+      </ul>
+    </div>
+  </div>
+</header>
 <div class="wrap">
   <aside class="side">
-    <h1 class="logo"><span class="px">MAX EDULAB</span>學習遊戲</h1>
+    <h1 class="logo">學習遊戲</h1>
     <div class="field">
       <label for="q">搜尋</label>
       <input id="q" class="search" type="search" placeholder="遊戲名稱、年級、科目、單元…" autocomplete="off">
     </div>
-    <div class="field">
-      <label for="sort">排序方式</label>
-      <select id="sort">
-        <option value="stage">依年級</option>
-        <option value="subject">依科目</option>
-      </select>
-    </div>
     <ul class="groups" id="groups"></ul>
-    <p class="note">標籤寫在每個遊戲 index.html 的 &lt;meta name="edulab:…"&gt; 裡，這裡會自動讀取。</p>
+    <p class="note">排序方式在最上方右邊。標籤寫在每個遊戲 index.html 的 &lt;meta name="edulab:…"&gt; 裡，這裡會自動讀取。</p>
   </aside>
   <main class="main" id="main"></main>
 </div>
@@ -128,7 +152,7 @@ const hl = (text, q) => { const t = esc(text); if (!q) return t; const i = text.
 const matches = (g, q) => !q || [g.title, g.stage, g.subject, g.desc, ...g.tagList].some(t => t.toLowerCase().includes(q.toLowerCase()));
 
 function render(){
-  const q = $('q').value.trim(), by = $('sort').value;
+  const q = $('q').value.trim(), by = sortBy;
   const list = games.filter(g => matches(g, q));
   const order = by === 'stage' ? STAGES : SUBJECTS, key = by === 'stage' ? 'stage' : 'subject', sub = by === 'stage' ? 'subject' : 'stage', subOrder = by === 'stage' ? SUBJECTS : STAGES;
   const names = [...new Set([...order, ...games.map(g => g[key])])];
@@ -145,9 +169,30 @@ function render(){
   try { localStorage.setItem('edulab-portal-sort', by); } catch (e) {}
 }
 
-try { const s = localStorage.getItem('edulab-portal-sort'); if (s) $('sort').value = s; } catch (e) {}
+let sortBy = 'stage';
+try { const s = localStorage.getItem('edulab-portal-sort'); if (s === 'stage' || s === 'subject') sortBy = s; } catch (e) {}
+// 排序方式的下拉選單：點按鈕打開，選了就關起來；按 Esc 或點外面也會關
+const menu = $('sortMenu'), btn = $('sortBtn');
+function syncSort(){
+  $('sortLbl').textContent = sortBy === 'stage' ? '依年級' : '依科目';
+  menu.querySelectorAll('li').forEach(li => li.setAttribute('aria-selected', String(li.dataset.v === sortBy)));
+}
+function openMenu(open){
+  menu.hidden = !open; btn.setAttribute('aria-expanded', String(open));
+  if (open) (menu.querySelector('[aria-selected="true"]') || menu.firstElementChild).focus();
+}
+btn.addEventListener('click', () => openMenu(menu.hidden));
+menu.addEventListener('click', e => { const li = e.target.closest('li'); if (!li) return; sortBy = li.dataset.v; syncSort(); openMenu(false); btn.focus(); render(); });
+menu.addEventListener('keydown', e => {
+  const items = [...menu.querySelectorAll('li')], i = items.indexOf(document.activeElement);
+  if (e.key === 'ArrowDown'){ items[(i + 1) % items.length].focus(); e.preventDefault(); }
+  else if (e.key === 'ArrowUp'){ items[(i - 1 + items.length) % items.length].focus(); e.preventDefault(); }
+  else if (e.key === 'Enter' || e.key === ' '){ document.activeElement.click(); e.preventDefault(); }
+  else if (e.key === 'Escape'){ openMenu(false); btn.focus(); }
+});
+document.addEventListener('click', e => { if (!e.target.closest('#sortbox')) openMenu(false); });
+syncSort();
 $('q').addEventListener('input', render);
-$('sort').addEventListener('change', render);
 render();
 Promise.all(games.map(loadMeta)).then(render);
 </script>
