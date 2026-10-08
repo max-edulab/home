@@ -47,10 +47,18 @@ a{color:inherit}
 .search:focus,select:focus{outline:3px solid var(--gold);outline-offset:1px}
 select{width:100%;font:inherit;font-size:16px;font-weight:700;padding:8px 10px;border:3px solid var(--ink);background:#fff;color:var(--ink);border-radius:0;cursor:pointer}
 .groups{display:flex;flex-direction:column;gap:4px;margin:0;padding:0;list-style:none}
-.groups a{display:flex;justify-content:space-between;align-items:center;gap:8px;text-decoration:none;font-weight:700;padding:6px 8px;border:2px solid transparent}
-.groups a:hover{border-color:var(--ink);background:#fff3b0}
-.groups .n{font-family:var(--f-px);font-size:10px;background:var(--ink);color:#fff;padding:3px 5px}
-.groups .empty{opacity:.45}
+.groups label{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:700;padding:6px 8px;border:2px solid transparent;cursor:pointer;user-select:none}
+.groups label:hover{border-color:var(--ink);background:#fff3b0}
+.groups input{appearance:none;flex:none;width:22px;height:22px;margin:0;border:3px solid var(--ink);background:#fff;cursor:pointer;display:grid;place-items:center}
+.groups input:checked{background:var(--leaf)}
+.groups input:checked::after{content:"";width:9px;height:5px;border-left:3px solid #fff;border-bottom:3px solid #fff;rotate:-45deg;translate:0 -2px}
+.groups input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.groups label:has(input:not(:checked)) span{opacity:.5}
+.ghead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ghead b{font-size:14px;font-weight:900;color:var(--muted)}
+.ghead .all{display:flex;gap:6px}
+.ghead button{font:inherit;font-size:12px;font-weight:700;background:#fff;color:var(--ink);border:2px solid var(--ink);padding:1px 6px;cursor:pointer}
+.ghead button:hover{background:#fff3b0}
 .note{font-size:12px;color:var(--muted);line-height:1.6;margin:0}
 
 /* ---------- 右邊：分組的遊戲卡 ---------- */
@@ -83,7 +91,6 @@ mark{background:#ffd23c;color:inherit}
   .home .ttl{font-size:18px}
   .sortbtn{min-width:0;font-size:15px;padding:8px 12px}
   .groups{flex-direction:row;flex-wrap:wrap}
-  .groups li:has(.empty){display:none}
   .cards{grid-template-columns:minmax(0,1fr)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -109,8 +116,11 @@ mark{background:#ffd23c;color:inherit}
       <label for="q">搜尋</label>
       <input id="q" class="search" type="search" placeholder="遊戲名稱、年級、科目、單元…" autocomplete="off">
     </div>
-    <ul class="groups" id="groups"></ul>
-    <p class="note">排序方式在最上方右邊。標籤寫在每個遊戲 index.html 的 &lt;meta name="edulab:…"&gt; 裡，這裡會自動讀取。</p>
+    <div class="field">
+      <div class="ghead"><b id="gTitle">年級</b><span class="all"><button type="button" id="gAll">全選</button><button type="button" id="gNone">全不選</button></span></div>
+      <ul class="groups" id="groups"></ul>
+    </div>
+    <p class="note">勾選要看的分組；排序方式在最上方右邊。標籤寫在每個遊戲 index.html 的 &lt;meta name="edulab:…"&gt; 裡，這裡會自動讀取。</p>
   </aside>
   <main class="main" id="main"></main>
 </div>
@@ -157,19 +167,28 @@ function render(){
   const order = by === 'stage' ? STAGES : SUBJECTS, key = by === 'stage' ? 'stage' : 'subject', sub = by === 'stage' ? 'subject' : 'stage', subOrder = by === 'stage' ? SUBJECTS : STAGES;
   const names = [...new Set([...order, ...games.map(g => g[key])])];
   const groups = names.map(name => ({ name, items:list.filter(g => g[key] === name).sort((a, b) => rank(subOrder, a[sub]) - rank(subOrder, b[sub]) || a.title.localeCompare(b.title, 'zh-Hant')) }));
-  $('groups').innerHTML = groups.map((gr, i) => `<li><a href="#g${i}" class="${gr.items.length ? '' : 'empty'}">${esc(gr.name)}<span class="n">${gr.items.length}</span></a></li>`).join('');
-  const shown = groups.map((gr, i) => ({ ...gr, i })).filter(gr => gr.items.length);
+  const off = hidden[by];
+  $('gTitle').textContent = by === 'stage' ? '年級' : '科目';
+  $('groups').innerHTML = groups.map(gr => `<li><label><span>${esc(gr.name)}</span><input type="checkbox" data-g="${esc(gr.name)}" ${off.has(gr.name) ? '' : 'checked'}></label></li>`).join('');
+  const shown = groups.map((gr, i) => ({ ...gr, i })).filter(gr => gr.items.length && !off.has(gr.name));
   $('main').innerHTML = shown.length ? shown.map(gr => `<section class="group"><h2 id="g${gr.i}">${esc(gr.name)}<span class="n">${gr.items.length}</span></h2>
     <div class="cards">${gr.items.map(g => `<a class="card" href="${esc(g.url)}">
       <div class="head"><span class="ico" aria-hidden="true">${esc(g.icon || '🎮')}</span><h3>${hl(g.title, q)}</h3></div>
       <div class="chips"><span class="chip stage">${hl(g.stage, q)}</span><span class="chip subject">${hl(g.subject, q)}</span>${g.tagList.map(t => `<span class="chip">${hl(t, q)}</span>`).join('')}</div>
       <p>${hl(g.desc, q)}</p>
       <span class="go">開始玩</span></a>`).join('')}</div></section>`).join('')
-    : `<div class="none">找不到「${esc(q)}」的遊戲</div>`;
+    : `<div class="none">${q ? `找不到「${esc(q)}」的遊戲` : '沒有勾選的分組，請在左邊勾選年級或科目'}</div>`;
   try { localStorage.setItem('edulab-portal-sort', by); } catch (e) {}
 }
 
 let sortBy = 'stage';
+// 勾掉（不顯示）的分組
+const hidden = { stage:new Set(), subject:new Set() };
+try { const h = JSON.parse(localStorage.getItem('edulab-portal-hidden') || '{}'); ['stage', 'subject'].forEach(k => { if (Array.isArray(h[k])) hidden[k] = new Set(h[k]); }); } catch (e) {}
+const saveHidden = () => { try { localStorage.setItem('edulab-portal-hidden', JSON.stringify({ stage:[...hidden.stage], subject:[...hidden.subject] })); } catch (e) {} };
+$('groups').addEventListener('change', e => { const c = e.target.closest('[data-g]'); if (!c) return; if (c.checked) hidden[sortBy].delete(c.dataset.g); else hidden[sortBy].add(c.dataset.g); saveHidden(); render(); });
+$('gAll').addEventListener('click', () => { hidden[sortBy].clear(); saveHidden(); render(); });
+$('gNone').addEventListener('click', () => { $('groups').querySelectorAll('[data-g]').forEach(c => hidden[sortBy].add(c.dataset.g)); saveHidden(); render(); });
 try { const s = localStorage.getItem('edulab-portal-sort'); if (s === 'stage' || s === 'subject') sortBy = s; } catch (e) {}
 // 排序方式的下拉選單：點按鈕打開，選了就關起來；按 Esc 或點外面也會關
 const menu = $('sortMenu'), btn = $('sortBtn');
