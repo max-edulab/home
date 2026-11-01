@@ -193,24 +193,29 @@ function render(){
   const shown = groups.map((gr, i) => ({ ...gr, i })).filter(gr => gr.items.length && !off.has(gr.name));
   $('main').innerHTML = shown.length ? shown.map(gr => `<section class="group"><h2 id="g${gr.i}">${esc(gr.name)}<span class="n">${gr.items.length}</span></h2>
     <div class="cards">${gr.items.map(g => `<a class="card" href="${esc(g.url)}">
-      ${g.pv ? `<div class="pv" data-pv aria-hidden="true">${Array.from({ length:PV_N }, (_, k) => `<img src="previews/${g.pv}/${k + 1}.jpg" alt="" ${k ? 'loading="lazy"' : ''} class="${k ? '' : 'on'}">`).join('')}<div class="dots">${'<i></i>'.repeat(PV_N)}</div></div>` : ''}
+      ${g.pv ? `<div class="pv" data-pv aria-hidden="true">${Array.from({ length:PV_N }, (_, k) => `<img ${k ? 'data-src' : 'src'}="previews/${g.pv}/${k + 1}.jpg" alt="" class="${k ? '' : 'on'}">`).join('')}<div class="dots">${'<i></i>'.repeat(PV_N)}</div></div>` : ''}
       <div class="body"><h3><span class="ico" aria-hidden="true">${esc(g.icon || '🎮')}</span>${hl(g.title, q)}</h3>
       <p>${hl(g.brief || g.desc, q)}</p>
       <div class="chips"><span class="chip stage">${hl(g.stage, q)}</span><span class="chip subject">${hl(g.subject, q)}</span>${pickTags(g, q).map(t => `<span class="chip">${hl(t, q)}</span>`).join('')}</div></div></a>`).join('')}</div></section>`).join('')
     : `<div class="none">${q ? `找不到「${esc(q)}」的遊戲` : '沒有勾選的分組，請在左邊勾選年級或科目'}</div>`;
   try { localStorage.setItem('edulab-portal-sort', by); } catch (e) {}
-  $('main').querySelectorAll('[data-pv]').forEach((pv, i) => { pv.dataset.k = 0; pv.dataset.off = i % 3; paintDots(pv); });
+  $('main').querySelectorAll('[data-pv]').forEach((pv, i) => { pv.dataset.k = 0; pv.dataset.off = i % 3; paintDots(pv); pvSeen ? pvSeen.observe(pv) : pvLoad(pv); });
 }
+// 卡片捲到畫面附近時，才把其他 5 張預覽圖載進來（手機上不會一打開就下載全部）
+const pvLoad = pv => pv.querySelectorAll('img[data-src]').forEach(im => { im.src = im.dataset.src; im.removeAttribute('data-src'); });
+const pvSeen = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ pvLoad(e.target); pvSeen.unobserve(e.target); } }), { rootMargin:'300px 0px' }) : null;
 // 預覽圖輪播：每張卡錯開一點時間換，畫面不會同時跳動；移到卡片上就停在那張
 function paintDots(pv){ const k = +pv.dataset.k; pv.querySelectorAll('img').forEach((im, n) => im.classList.toggle('on', n === k)); pv.querySelectorAll('.dots i').forEach((d, n) => d.classList.toggle('on', n === k)); }
-if (!matchMedia('(prefers-reduced-motion: reduce)').matches){
+// 手機上沒有滑鼠移上去這回事，就一直輪播；系統開了「減少動態」時一樣會換圖，只是不用淡入
+const canHover = matchMedia('(hover:hover)').matches;
+{
   let tick = 0;
   setInterval(() => {
     tick = (tick + 1) % 3;
     document.querySelectorAll('[data-pv]').forEach(pv => {
-      if (+pv.dataset.off !== tick || pv.closest('.card:hover')) return;
+      if (+pv.dataset.off !== tick || (canHover && pv.closest('.card:hover'))) return;
       const k = (+pv.dataset.k + 1) % PV_N, im = pv.querySelectorAll('img')[k];
-      if (!im.complete || !im.naturalWidth){ im.loading = 'eager'; return; }   // 下一張還沒載好就先等，不顯示空白
+      if (im.dataset.src || !im.complete || !im.naturalWidth) return;   // 下一張還沒載好就先等，不顯示空白
       pv.dataset.k = k; paintDots(pv);
     });
   }, PV_MS / 3);
@@ -267,6 +272,8 @@ renderBack();
 $('q').addEventListener('input', render);
 render();
 Promise.all(games.map(loadMeta)).then(() => { render(); renderBack(); });
+// 畫面上的先載好以後，剩下的預覽圖也慢慢載進來（直接捲到最下面時，中間略過的卡片也會動）
+addEventListener('load', () => setTimeout(() => document.querySelectorAll('[data-pv]').forEach(pvLoad), 4000));
 </script>
 </body>
 </html>
