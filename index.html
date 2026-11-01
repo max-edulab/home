@@ -152,7 +152,7 @@ const GAMES = [
   { url:'https://max-edulab.github.io/grade6-SocialStudies-Taiwan-Sem1/', folder:'grade6/social/taiwan-sem1', pv:'social', brief:'六上社會闖關，還有社會魔考',
     labels:{ title:'社會任務', stage:'國小六年級', subject:'社會', icon:'🚀', tags:'民主發展,二二八,戒嚴,美麗島,憲法,權利義務,五院,地方自治,少子化,性別平等,宗教,原住民族,上學期', desc:'臺灣民主、憲法權利、政府運作、社會變遷、性別平等與宗教文化的闖關任務：每次 20 題、答錯附詳解，還有會跑來跑去的小夥伴和知識卡。' } },
   { url:'https://max-edulab.github.io/MandarinChinese-ReadingLiteracy/', folder:'reading/literacy', pv:'reading', brief:'讀一篇短文、答 5 題，練閱讀理解',
-    labels:{ title:'閱讀素養', stage:'國小一年級,國小二年級,國小六年級', subject:'國語', icon:'📚', tags:'閱讀理解,生詞,自然,科學,搞笑,文學', desc:'依年級分成 Lv1～Lv6，已開放一、二年級（全文注音）和六年級；選喜歡的主題讀原創短文，生詞點一下就有解釋，讀完回答閱讀理解題。' } }
+    labels:{ title:'閱讀素養', stage:'國小一年級,國小二年級,國小三年級,國小四年級,國小五年級,國小六年級', subject:'國語', icon:'📚', tags:'閱讀理解,生詞,自然,科學,搞笑,文學', desc:'一到六年級分成 Lv1～Lv6（一、二年級全文注音）；選喜歡的主題讀原創短文，生詞點一下就有解釋，讀完回答閱讀理解題。' } }
 ];
 const PV_N = 6, PV_MS = 2000;   // 每個遊戲 6 張預覽圖，每 2 秒換一張
 // 年級和科目的順序（不在清單裡的排最後）
@@ -165,7 +165,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '
 const splitStages = s => String(s).split(/[,，、]/).map(t => t.trim()).filter(Boolean);
 const games = GAMES.map(g => ({ ...g, ...g.labels, stages:splitStages(g.labels.stage), tagList:g.labels.tags.split(',').filter(Boolean) }));
 // 卡片上的年級標籤：好幾個年級就寫成「國小一、二、六年級」
-const stageLabel = g => g.stages.length < 2 ? g.stages[0] || '' : '國小' + g.stages.map(t => t.replace('國小', '').replace('年級', '')).join('、') + '年級';
+const stageLabel = g => { if (g.stages.length < 2) return g.stages[0] || ''; const n = g.stages.map(t => t.replace('國小', '').replace('年級', '')), all = '一二三四五六'; return '國小' + (n.join('') === all ? '一～六' : n.join('、')) + '年級'; };
 
 // 讀每個遊戲裡的 <meta name="edulab:*">（GitHub Pages 允許跨網域讀取）
 async function loadMeta(g){
