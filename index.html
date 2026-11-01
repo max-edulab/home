@@ -152,7 +152,7 @@ const GAMES = [
   { url:'https://max-edulab.github.io/grade6-SocialStudies-Taiwan-Sem1/', folder:'grade6/social/taiwan-sem1', pv:'social', brief:'六上社會闖關，還有社會魔考',
     labels:{ title:'社會任務', stage:'國小六年級', subject:'社會', icon:'🚀', tags:'民主發展,二二八,戒嚴,美麗島,憲法,權利義務,五院,地方自治,少子化,性別平等,宗教,原住民族,上學期', desc:'臺灣民主、憲法權利、政府運作、社會變遷、性別平等與宗教文化的闖關任務：每次 20 題、答錯附詳解，還有會跑來跑去的小夥伴和知識卡。' } },
   { url:'https://max-edulab.github.io/MandarinChinese-ReadingLiteracy/', folder:'reading/literacy', pv:'reading', brief:'讀一篇短文、答 5 題，練閱讀理解',
-    labels:{ title:'閱讀素養', stage:'國小六年級', subject:'國語', icon:'📚', tags:'閱讀理解,生詞,自然,科學,搞笑,文學', desc:'依年級分成 Lv1～Lv6，選喜歡的主題讀約 500 字的原創文章，生詞點一下就有解釋，讀完回答 5 題閱讀理解。' } }
+    labels:{ title:'閱讀素養', stage:'國小一年級,國小二年級,國小六年級', subject:'國語', icon:'📚', tags:'閱讀理解,生詞,自然,科學,搞笑,文學', desc:'依年級分成 Lv1～Lv6，已開放一、二年級（全文注音）和六年級；選喜歡的主題讀原創短文，生詞點一下就有解釋，讀完回答閱讀理解題。' } }
 ];
 const PV_N = 6, PV_MS = 2000;   // 每個遊戲 6 張預覽圖，每 2 秒換一張
 // 年級和科目的順序（不在清單裡的排最後）
@@ -161,7 +161,11 @@ const SUBJECTS = ['國語', '數學', '社會', '自然', '英語', '作文'];
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
-const games = GAMES.map(g => ({ ...g, ...g.labels, tagList:g.labels.tags.split(',').filter(Boolean) }));
+// 一個遊戲可以屬於好幾個年級：stage 用逗號分開，例如「國小一年級,國小二年級」
+const splitStages = s => String(s).split(/[,，、]/).map(t => t.trim()).filter(Boolean);
+const games = GAMES.map(g => ({ ...g, ...g.labels, stages:splitStages(g.labels.stage), tagList:g.labels.tags.split(',').filter(Boolean) }));
+// 卡片上的年級標籤：好幾個年級就寫成「國小一、二、六年級」
+const stageLabel = g => g.stages.length < 2 ? g.stages[0] || '' : '國小' + g.stages.map(t => t.replace('國小', '').replace('年級', '')).join('、') + '年級';
 
 // 讀每個遊戲裡的 <meta name="edulab:*">（GitHub Pages 允許跨網域讀取）
 async function loadMeta(g){
@@ -171,6 +175,7 @@ async function loadMeta(g){
     const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
     const m = k => { const el = doc.querySelector(`meta[name="edulab:${k}"]`); return el ? el.content.trim() : ''; };
     ['title', 'stage', 'subject', 'icon', 'desc'].forEach(k => { if (m(k)) g[k] = m(k); });
+    g.stages = splitStages(g.stage);
     if (m('tags')) g.tagList = m('tags').split(/[,，、]/).map(t => t.trim()).filter(Boolean);
   } catch (e) { /* 讀不到就用備用標籤 */ }
 }
@@ -179,14 +184,16 @@ const rank = (list, v) => { const i = list.indexOf(v); return i < 0 ? list.lengt
 const hl = (text, q) => { const t = esc(text); if (!q) return t; const i = text.toLowerCase().indexOf(q.toLowerCase()); return i < 0 ? t : esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length)); };
 // 卡片上只放前三個標籤；搜尋到的標籤會優先顯示
 const pickTags = (g, q) => { const hit = q ? g.tagList.filter(t => t.toLowerCase().includes(q.toLowerCase())) : []; return [...new Set([...hit, ...g.tagList])].slice(0, 3); };
-const matches = (g, q) => !q || [g.title, g.stage, g.subject, g.desc, ...g.tagList].some(t => t.toLowerCase().includes(q.toLowerCase()));
+const matches = (g, q) => !q || [g.title, ...g.stages, stageLabel(g), g.subject, g.desc, ...g.tagList].some(t => t.toLowerCase().includes(q.toLowerCase()));
 
 function render(){
   const q = $('q').value.trim(), by = sortBy;
   const list = games.filter(g => matches(g, q));
-  const order = by === 'stage' ? STAGES : SUBJECTS, key = by === 'stage' ? 'stage' : 'subject', sub = by === 'stage' ? 'subject' : 'stage', subOrder = by === 'stage' ? SUBJECTS : STAGES;
-  const names = [...new Set([...order, ...games.map(g => g[key])])];
-  const groups = names.map(name => ({ name, items:list.filter(g => g[key] === name).sort((a, b) => rank(subOrder, a[sub]) - rank(subOrder, b[sub]) || a.title.localeCompare(b.title, 'zh-Hant')) }));
+  const order = by === 'stage' ? STAGES : SUBJECTS, subOrder = by === 'stage' ? SUBJECTS : STAGES;
+  // 依年級排時，一個遊戲會出現在它的每一個年級裡
+  const keysOf = g => by === 'stage' ? g.stages : [g.subject], subOf = g => by === 'stage' ? g.subject : g.stages[0];
+  const names = [...new Set([...order, ...games.flatMap(keysOf)])];
+  const groups = names.map(name => ({ name, items:list.filter(g => keysOf(g).includes(name)).sort((a, b) => rank(subOrder, subOf(a)) - rank(subOrder, subOf(b)) || a.title.localeCompare(b.title, 'zh-Hant')) }));
   const off = hidden[by];
   $('gTitle').textContent = by === 'stage' ? '年級' : '科目';
   $('groups').innerHTML = groups.map(gr => `<li><label><span>${esc(gr.name)}</span><input type="checkbox" data-g="${esc(gr.name)}" ${off.has(gr.name) ? '' : 'checked'}></label></li>`).join('');
@@ -196,7 +203,7 @@ function render(){
       ${g.pv ? `<div class="pv" data-pv aria-hidden="true">${Array.from({ length:PV_N }, (_, k) => `<img ${k ? 'data-src' : 'src'}="previews/${g.pv}/${k + 1}.jpg" alt="" class="${k ? '' : 'on'}">`).join('')}<div class="dots">${'<i></i>'.repeat(PV_N)}</div></div>` : ''}
       <div class="body"><h3><span class="ico" aria-hidden="true">${esc(g.icon || '🎮')}</span>${hl(g.title, q)}</h3>
       <p>${hl(g.brief || g.desc, q)}</p>
-      <div class="chips"><span class="chip stage">${hl(g.stage, q)}</span><span class="chip subject">${hl(g.subject, q)}</span>${pickTags(g, q).map(t => `<span class="chip">${hl(t, q)}</span>`).join('')}</div></div></a>`).join('')}</div></section>`).join('')
+      <div class="chips"><span class="chip stage">${hl(stageLabel(g), q)}</span><span class="chip subject">${hl(g.subject, q)}</span>${pickTags(g, q).map(t => `<span class="chip">${hl(t, q)}</span>`).join('')}</div></div></a>`).join('')}</div></section>`).join('')
     : `<div class="none">${q ? `找不到「${esc(q)}」的遊戲` : '沒有勾選的分組，請在左邊勾選年級或科目'}</div>`;
   try { localStorage.setItem('edulab-portal-sort', by); } catch (e) {}
   $('main').querySelectorAll('[data-pv]').forEach((pv, i) => { pv.dataset.k = 0; pv.dataset.off = i % 3; paintDots(pv); pvSeen ? pvSeen.observe(pv) : pvLoad(pv); });
