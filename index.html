@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Max EduLab 學習遊戲</title>
-<meta name="description" content="Max EduLab 的學習遊戲入口：依年級或科目找遊戲，點一下就開始玩。">
+<title>Max EduLab 遊戲大廳</title>
+<meta name="description" content="Max EduLab 的遊戲大廳：依年級或科目找遊戲，點一下就開始玩。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -112,7 +112,7 @@ mark{background:#ffd23c;color:inherit}
 <body>
 <header class="bar">
   <div class="bar-in">
-    <a class="home" href="./"><span class="px">MAX EDULAB</span><span class="ttl">Home 主畫面</span></a>
+    <a class="home" href="./"><span class="px">MAX EDULAB</span><span class="ttl">遊戲大廳</span></a>
     <div class="sortbox" id="sortbox">
       <button class="sortbtn" id="sortBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="sortMenu">排序方式：<b id="sortLbl">依年級</b><span class="caret" aria-hidden="true"></span></button>
       <ul class="sortmenu" id="sortMenu" role="listbox" aria-label="排序方式" hidden>
@@ -269,7 +269,7 @@ try {
 const lastGame = () => last && Date.now() - last.at < 30 * 60 * 1000 && games.find(g => last.url.startsWith(g.url));
 function renderBack(){
   const g = lastGame(); $('back').hidden = !g; if (!g) return;
-  $('back').innerHTML = `<a href="${esc(last.url)}" id="backLink">↩ 回到剛才的遊戲：${esc(g.icon || '🎮')} ${esc(g.title)}<small>不小心按到主畫面嗎？點這裡，或按 <kbd>Backspace</kbd> / <kbd>B</kbd></small></a>`;
+  $('back').innerHTML = `<a href="${esc(last.url)}" id="backLink">↩ 回到剛才的遊戲：${esc(g.icon || '🎮')} ${esc(g.title)}<small>不小心回到遊戲大廳嗎？點這裡，或按 <kbd>Backspace</kbd> / <kbd>B</kbd></small></a>`;
 }
 addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input, textarea, select, [contenteditable]')) return;
